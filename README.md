@@ -32,7 +32,24 @@ TCL 32S5400（G06 / MT5867）向け、Magisk **25.2（25200）** 適用済みの
 
 **対象TVと同じファームウェアの純正boot・vbmeta等を自分でバックアップし、復旧手段を確保してください。** ブートローダーのアンロックと、改変イメージに対応するAVB設定が前提です。アンロック時のデータ消去や、書き込み失敗による起動不能の可能性があります。改変状態で再ロックしないでください。
 
-vbmetaの検証無効化手順は、下記の「vbmetaの検証無効化」を参照してください。vbmetaは同じファームウェアのものを使い、他機種の空vbmetaを流用しないでください。同じReleaseに元の`vbmeta.img`と`vbmeta_system.img`も添付しています。どちらも **Flags=0（検証無効化なし）** のバックアップで、無効化済みイメージではありません。`vbmeta_system`を一律に書き換える必要はありません。
+vbmetaの検証無効化手順は、[「vbmetaの検証無効化」](#vbmetaの検証無効化)を参照してください。vbmetaは同じファームウェアのものを使い、他機種の空vbmetaを流用しないでください。同じReleaseに元の`vbmeta.img`と`vbmeta_system.img`も添付しています。どちらも **Flags=0（検証無効化なし）** のバックアップで、無効化済みイメージではありません。`vbmeta_system`を一律に書き換える必要はありません。
+
+## vbmetaの検証無効化
+
+**改変bootを書き込む前に、必ずvbmetaのAVB検証を無効化してください。** ブートローダーのアンロックとは別の操作です。対象TVと同じファームウェアのvbmetaを使い、元のboot・vbmeta等をバックアップして、復旧手段を確保してから進めます。
+
+以下はブートローダーのFastboot書き込みに対応した環境での操作例です。今回の公開作業で、このFastboot書き込み経路を実機検証したものではありません。
+
+```powershell
+fastboot devices
+fastboot --disable-verity --disable-verification flash vbmeta vbmeta.img
+# 転送・書き込みが両方OKAYであることを確認してからbootの書き込みへ進む
+# FAILEDの場合は中止
+```
+
+Releaseのvbmeta類はFlags=0で、無効化済みではありません。別機種のvbmetaや空イメージを流用せず、vbmeta_systemも一律に書き換えないでください。MBOOTのmmc write.pにはFastbootのオプションは使えません。検証無効化は起動時の改変検知を弱めます。改変状態で再ロックしないでください。
+
+## Magisk適用済みbootの書き込み
 
 ```powershell
 Get-FileHash .\boot-magisk-25.2-g06.img -Algorithm SHA256
@@ -49,21 +66,6 @@ fastboot reboot
 ```
 
 これはFastboot対応環境の操作例です。このファイルについて、今回の公開作業でFastbootによる書き込み経路を検証したという意味ではありません。FAILEDが出た場合は中止してください。復旧時は利用者自身の対応する純正bootを使用します。
-
-## vbmetaの検証無効化
-
-**改変bootを書き込む前に、必ずvbmetaのAVB検証を無効化してください。** ブートローダーのアンロックとは別の操作です。対象TVと同じファームウェアのvbmetaを使い、元のboot・vbmeta等をバックアップして、復旧手段を確保してから進めます。
-
-以下はブートローダーのFastboot書き込みに対応した環境での操作例です。今回の公開作業で、このFastboot書き込み経路を実機検証したものではありません。
-
-```powershell
-fastboot devices
-fastboot --disable-verity --disable-verification flash vbmeta vbmeta.img
-# 転送・書き込みが両方OKAYであることを確認してからbootの書き込みへ進む
-# FAILEDの場合は中止
-```
-
-Releaseのvbmeta類はFlags=0で、無効化済みではありません。別機種のvbmetaや空イメージを流用せず、vbmeta_systemも一律に書き換えないでください。MBOOTのmmc write.pにはFastbootのオプションは使えません。検証無効化は起動時の改変検知を弱めます。改変状態で再ロックしないでください。
 
 ## 公開範囲・ライセンス
 
