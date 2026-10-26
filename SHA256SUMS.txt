@@ -1,0 +1,2 @@
+ce9acfddb98cc1e27e09bde687114df13559eb0adc7e419b35c77276f2ec4747  boot-magisk-25.2-g06.img
+9178e65bbb1338ffd318801ec0c900a7ad4b846192b5aa3a073ffc47c238f72d  Magisk-v25.2-upstream-source.tar.gz
