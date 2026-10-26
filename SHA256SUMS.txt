@@ -1,2 +1,5 @@
 ce9acfddb98cc1e27e09bde687114df13559eb0adc7e419b35c77276f2ec4747  boot-magisk-25.2-g06.img
+589ed823e9a84c56feb95ac58e7cf384626b9cbf4fda2a907bc36e103de1bad2  LICENSE-Magisk.txt
 9178e65bbb1338ffd318801ec0c900a7ad4b846192b5aa3a073ffc47c238f72d  Magisk-v25.2-upstream-source.tar.gz
+96770a2f5dddf953a334c57e2662d779d983ca1bb2f11e9bca53561131751b98  vbmeta_system.img
+f18825b4d6f8ea2e51345f512ad25cb7d3d73ef73f5224c758b70876fbefa663  vbmeta.img

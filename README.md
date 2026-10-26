@@ -32,7 +32,7 @@ TCL 32S5400（G06 / MT5867）向け、Magisk **25.2（25200）** 適用済みの
 
 **対象TVと同じファームウェアの純正boot・vbmeta等を自分でバックアップし、復旧手段を確保してください。** ブートローダーのアンロックと、改変イメージに対応するAVB設定が前提です。アンロック時のデータ消去や、書き込み失敗による起動不能の可能性があります。改変状態で再ロックしないでください。
 
-vbmetaの検証無効化手順とFastboot操作例は [G06向けTWRPの導入・復旧手順](https://github.com/Long0823-1/twrp-tcl-g06-mt5867#導入と復旧) を参照してください。vbmetaは同じファームウェアのものを使い、他機種の空vbmetaを流用しないでください。このReleaseにvbmetaは含みません。
+vbmetaの検証無効化手順とFastboot操作例は [G06向けTWRPの導入・復旧手順](https://github.com/Long0823-1/twrp-tcl-g06-mt5867#導入と復旧) を参照してください。vbmetaは同じファームウェアのものを使い、他機種の空vbmetaを流用しないでください。同じReleaseに元の`vbmeta.img`と`vbmeta_system.img`も添付しています。どちらも **Flags=0（検証無効化なし）** のバックアップで、無効化済みイメージではありません。`vbmeta_system`を一律に書き換える必要はありません。
 
 ```powershell
 Get-FileHash .\boot-magisk-25.2-g06.img -Algorithm SHA256
@@ -52,6 +52,6 @@ fastboot reboot
 
 ## 公開範囲・ライセンス
 
-このReleaseはbootイメージのみです。全パーティションバックアップ、userdata、NVRAM、DRM鍵、端末の認証情報は収録しません。ramdiskのファイル一覧と設定ファイルを確認し、個人認証情報のファイルは見つかっていませんが、イメージ全体の安全性を保証するものではありません。
+このReleaseにはMagisk適用済みbootと、同じバックアップから取得したvbmeta・vbmeta_systemを収録しています。vbmeta類は各1,048,576バイト、Flags=0で、改変せず添付しています。これらのvbmetaを書き込んだ状態での新たな起動試験は行っていません。全パーティションバックアップ、userdata、NVRAM、DRM鍵、端末の認証情報は収録しません。ramdiskのファイル一覧と設定ファイルを確認し、個人認証情報のファイルは見つかっていませんが、イメージ全体の安全性を保証するものではありません。
 
 Magiskやカーネル等の権利はそれぞれの権利者に帰属します。イメージ全体に独自のオープンソースライセンスを付与するものではありません。出典とソース情報は [THIRD_PARTY.md](THIRD_PARTY.md) を参照してください。
