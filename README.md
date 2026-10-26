@@ -2,6 +2,30 @@
 
 TCL 32S5400（G06 / MT5867）向け、Magisk **25.2（25200）** 適用済みのbootパーティションバックアップです。公式ファームウェアではありません。
 
+## 実機検証：公開bootをFastbootから書き込んで正常起動（2026-10-27）
+
+ユーザーの実機で、次の流れによる**公開Magisk適用済みbootの書き込みと通常起動**を確認しました。MBOOTからのboot書き込みを使わずに起動できた検証結果です。
+
+1. 対象TVに対応するStock USBで純正状態へ復元。
+2. ADBを有効化し、Fastbootへ移行。
+3. `fastboot flashing unlock` でブートローダーをアンロック。
+4. vbmetaの検証を無効化。
+5. 公開ファイル `boot-magisk-25.2-g06.img` をFastbootからbootへ書き込み。
+6. `fastboot erase userdata` を実行。
+7. `fastboot reboot` で再起動し、正常な通常起動を確認。
+
+実際に報告されたboot書き込み以降のコマンドは次のとおりです。
+
+```powershell
+fastboot flash boot "C:\Users\Owner\Downloads\boot-magisk-25.2-g06.img"
+fastboot erase userdata
+fastboot reboot
+```
+
+**userdata消去を含む試験です。設定・アプリ・アプリデータは失われます。** アンロック時の消去にも備え、必要なデータを退避してください。vbmeta無効化時に実行したコマンド全文は報告に含まれていないため、下記のオプション付きコマンドは操作例として掲載しています。
+
+この記録で新たに確認できた範囲は、上記条件でのFastboot書き込みと通常起動です。`su -c id`の出力や他個体・別ファームウェア、userdataを消去しない場合まで検証済みとはしていません。起動後に `adb shell "su -c id"` を実行し、Magiskの権限許可後に `uid=0(root)` が返ることを確認できます。
+
 ## ダウンロード
 
 [Releases](../../releases) の `magisk-25.2-20261027` から `boot-magisk-25.2-g06.img` と `SHA256SUMS.txt` を取得してください。
@@ -65,7 +89,7 @@ fastboot flash boot .\boot-magisk-25.2-g06.img
 fastboot reboot
 ```
 
-これはFastboot対応環境の操作例です。このファイルについて、今回の公開作業でFastbootによる書き込み経路を検証したという意味ではありません。FAILEDが出た場合は中止してください。復旧時は利用者自身の対応する純正bootを使用します。
+これはFastboot対応環境の操作例です。公開bootのFastboot書き込みと通常起動は、上記のユーザー実機検証で確認済みです。FAILEDが出た場合は中止してください。復旧時は利用者自身の対応する純正bootを使用します。
 
 ## 公開範囲・ライセンス
 
