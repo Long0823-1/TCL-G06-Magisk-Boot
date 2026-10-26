@@ -60,18 +60,102 @@ vbmetaの検証無効化手順は、[「vbmetaの検証無効化」](#vbmetaの�
 
 ## vbmetaの検証無効化
 
-**改変bootを書き込む前に、必ずvbmetaのAVB検証を無効化してください。** ブートローダーのアンロックとは別の操作です。対象TVと同じファームウェアのvbmetaを使い、元のboot・vbmeta等をバックアップして、復旧手段を確保してから進めます。
+**改変bootを書き込む前に、必ずvbmetaのAVB検証を無効化してください。** 以下はWindowsのPowerShellで実行する手順です。TVへ実際に書き込む操作を含みます。
 
-以下はブートローダーのFastboot書き込みに対応した環境での操作例です。今回の公開作業で、このFastboot書き込み経路を実機検証したものではありません。
+### 1. 何を無効化するのか
+
+vbmetaにはboot等の検証に用いる署名・ハッシュ・検証設定が入っています。ブートローダーのアンロックと、vbmetaの検証無効化は別の操作です。Magisk適用済みbootを書き込んでも、別パーティションのvbmetaは自動で変更されません。
+
+| 対象 | 配布時の状態 / 操作 |
+|---|---|
+| `vbmeta.img` | Flags=0。下記のFastbootコマンドで、書き込みデータの検証無効化フラグを設定します |
+| `vbmeta_system.img` | Flags=0のバックアップ。以下の手順では書き換えません |
+| ブートローダー | あらかじめアンロックが必要。vbmetaだけではアンロックできません |
+
+`--disable-verity` はhashtree検証の無効化フラグ（1）、`--disable-verification` はAVB検証の無効化フラグ（2）を設定します。両方指定したトップレベルvbmetaのFlagsは3になります。PC上の元ファイルは変更されず、Fastbootが転送前に書き込みデータへ反映します。**元ファイルをもう一度調べてFlags=0でも、それだけで書き込み失敗とは判断できません。**
+
+### 2. 対応ファイルを用意し、バックアップを保管する
+
+- 自分のTVの純正boot・vbmeta等のバックアップと、対応するStock USBによる復旧手段を確保します。
+- 同じファームウェアの `vbmeta.img` を使います。Releaseにも確認機のバックアップを添付していますが、機種名だけで別ファームウェアへの適合は判断できません。
+- Releaseの `vbmeta.img` と `SHA256SUMS.txt` をダウンロードします。別機種のファイルや空のvbmetaは使いません。
+- PCにはAndroid SDK Platform-Toolsの `adb` と `fastboot` を用意します。以下は両コマンドをPATHから実行できる例です。PowerShellで現在のフォルダーにあるexeを使う場合は `fastboot` を ` .\fastboot.exe` に読み替えます。
+
+公式配布: [Android SDK Platform-Tools](https://developer.android.com/tools/releases/platform-tools)
+
+例として `C:\Users\Owner\Downloads\vbmeta.img` に保存した場合、次を実行します。自分で採取したvbmetaは、自分のバックアップ時のハッシュと照合してください。
 
 ```powershell
-fastboot devices
-fastboot --disable-verity --disable-verification flash vbmeta vbmeta.img
-# 転送・書き込みが両方OKAYであることを確認してからbootの書き込みへ進む
-# FAILEDの場合は中止
+Get-Item "C:\Users\Owner\Downloads\vbmeta.img" | Select-Object Name, Length
+Get-FileHash "C:\Users\Owner\Downloads\vbmeta.img" -Algorithm SHA256
 ```
 
-Releaseのvbmeta類はFlags=0で、無効化済みではありません。別機種のvbmetaや空イメージを流用せず、vbmeta_systemも一律に書き換えないでください。MBOOTのmmc write.pにはFastbootのオプションは使えません。検証無効化は起動時の改変検知を弱めます。改変状態で再ロックしないでください。
+このReleaseのファイルの場合、サイズは **1,048,576 bytes**、SHA-256は次の値です。一致しなければ先に進まないでください。
+
+```text
+f18825b4d6f8ea2e51345f512ad25cb7d3d73ef73f5224c758b70876fbefa663
+```
+
+### 3. 対象TVをFastbootへ移し、アンロック状態を確認する
+
+初回の `fastboot flashing unlock` は前提となる別操作です。データ消去が発生する場合があるため、必要なデータを退避し、TV側に確認画面が出た場合は表示内容を確認して操作してください。すでにアンロック済みなら、確認のためだけに再実行する必要はありません。
+
+Androidが起動している状態でADBを有効化し、接続認証を許可してから実行します。
+
+```powershell
+adb devices
+adb reboot bootloader
+fastboot devices
+```
+
+ADBが複数接続されている場合は、最初の `adb devices` に表示された対象TVのシリアルを使い、`adb -s <ADB_SERIAL> reboot bootloader` と指定します。複数のFastboot端末がある場合も `fastboot -s <FASTBOOT_SERIAL> ...` と指定してください。ADBとFastbootのシリアルは同じとは限りません。出力が空・別端末なら書き込まないでください。
+
+アンロック状態を確認する補助コマンドは次のとおりです。機種によっては未対応です。
+
+```powershell
+fastboot getvar unlocked
+```
+
+`unlocked: yes` を返す機種ではそれを確認します。未対応のエラーはアンロック済みの証明にはなりません。確認機では事前に `fastboot flashing unlock` を実行した流れで、公開bootの正常起動が報告されています。
+
+### 4. 検証無効化オプションを付けてvbmetaを書き込む
+
+対象TVだけを認識し、ファイルの適合・バックアップ・アンロックを確認してから、次を実行します。
+
+```powershell
+fastboot --disable-verity --disable-verification flash vbmeta "C:\Users\Owner\Downloads\vbmeta.img"
+```
+
+**両オプションを省略しないでください。** `fastboot flash vbmeta vbmeta.img` だけでは、今回添付したFlags=0のファイルを検証無効化せずに書くことになります。書き込み先はトップレベルの `vbmeta` です。本機はA-onlyであり、他機種の `vbmeta_a` / `vbmeta_b` 等へ勝手に置き換えないでください。
+
+### 5. 成功を確認してからbootへ進む
+
+通常は、転送（`Sending`）と書き込み（`Writing`）の両方で `OKAY` が表示されます。PowerShellでは、直後の終了コードも確認できます。
+
+```powershell
+$LASTEXITCODE
+# 0であることを確認
+```
+
+`FAILED`、転送・書き込みエラー、0以外の終了コードが出たら中止します。`OKAY`は転送・書き込み処理の成功を示しますが、これだけでTV上のAVB挙動やroot取得まで証明するものではありません。実機のFlagsを厳密に確かめるには、書き込み後のvbmetaを読み戻して確認する必要があります。
+
+成功後は、下の「Magisk適用済みbootの書き込み」へ進みます。今回の起動成功例は `fastboot erase userdata` も実行したものです。この操作ではTVの設定・アプリ・アプリデータが消えるので、冒頭の検証手順とデータ消去の注意を必ず確認してください。
+
+### エラーが出た場合
+
+| 症状 | 確認すること |
+|---|---|
+| `waiting for any device` / `fastboot devices` が空 | Fastbootモード、データ通信対応USBケーブル、PC側ドライバーを確認。ADB接続の成功だけではFastboot接続は確認できません |
+| `Flashing is not allowed` / lockedに関する拒否 | ブートローダーのアンロックが完了しているか確認 |
+| `unknown option` | 使用しているFastbootのパスと版を確認し、公式Platform-Toolsを使用 |
+| `cannot load` / ファイルが見つからない | 保存先とファイル名を確認。パスに空白がある場合は引用符で囲む |
+| partition不明・書き込み失敗 | 対象機・Fastbootモード・パーティション構成を確認。別の領域へ推測で書き込まない |
+
+vbmetaの消去、空イメージの流用、`vbmeta_system`の一律書き換えで対処しないでください。MBOOTの `mmc write.p` にFastbootのオプションを付けても、この処理にはなりません。**検証無効化は起動時の改変検知を弱めます。改変状態のままブートローダーを再ロックしないでください。**
+
+検証範囲：ユーザー実機では「vbmeta無効化 → 公開bootのFastboot書き込み → userdata消去 → 通常起動」を確認済みです。vbmeta無効化時の入力コマンド全文と書き込み後Flagsの読み戻し結果は報告に含まれておらず、上記はAOSPのFastboot実装に基づく操作例です。
+
+参考: [AOSP Fastboot実装](https://android.googlesource.com/platform/system/core/+/master/fastboot/fastboot.cpp) / [AVBヘッダーとフラグ定義](https://android.googlesource.com/platform/external/avb/+/master/libavb/avb_vbmeta_image.h)
 
 ## Magisk適用済みbootの書き込み
 
